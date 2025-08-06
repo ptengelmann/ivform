@@ -110,36 +110,91 @@ export default function EnhancedIVCreativeForm() {
     setIsSubmitting(true);
     
     try {
-      // Format the data for email submission
-      const submissionData = {
-        ...formData,
-        services_needed: formData.services_needed.join(', '),
-        marketing_activities: formData.marketing_activities.join(', '),
-        technical_requirements: formData.technical_requirements.join(', '),
-        integrations_needed: formData.integrations_needed.join(', '),
-        marketing_goals: formData.marketing_goals.join(', '),
-        success_metrics: formData.success_metrics.join(', '),
-        submission_date: new Date().toISOString(),
-        formatted_date: new Date().toLocaleDateString('en-GB', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      };
+      const formDataToSend = new FormData();
+      
+      // Add Web3Forms access key
+      formDataToSend.append('access_key', 'cd298eca-415b-4d79-bdeb-fc360586dc5d');
+      
+      // Add custom subject line
+      formDataToSend.append('subject', `🚀 New IV Creative Brief: ${formData.company_name || 'New Client'} - ${formData.primary_goal || 'Project Inquiry'}`);
+      
+      // Add form data
+      Object.keys(formData).forEach(key => {
+        if (Array.isArray(formData[key])) {
+          formDataToSend.append(key, formData[key].join(', '));
+        } else {
+          formDataToSend.append(key, formData[key]);
+        }
+      });
+      
+      // Add formatted submission date
+      formDataToSend.append('submission_date', new Date().toLocaleDateString('en-GB', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }));
 
-      // Your Formspree endpoint
-      const response = await fetch('https://formspree.io/f/mnnzgwjz', {
+      // Add formatted message for better email readability
+      const emailMessage = `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IV CREATIVE - NEW CLIENT BRIEF
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏢 COMPANY: ${formData.company_name || 'Not provided'}
+📧 CONTACT: ${formData.contact_name || 'Not provided'} (${formData.email || 'Not provided'})
+💰 REVENUE: ${formData.revenue || 'Not provided'}
+🎯 GOAL: ${formData.primary_goal || 'Not provided'}
+💷 BUDGET: ${formData.budget_range || 'Not provided'}
+⏰ TIMELINE: ${formData.timeline || 'Not provided'}
+🚨 URGENCY: ${formData.project_urgency || 'Not provided'}
+
+📋 SERVICES NEEDED:
+${formData.services_needed.length > 0 ? formData.services_needed.map(s => `• ${s.replace(/_/g, ' ')}`).join('\n') : '• None specified'}
+
+💡 BIGGEST CHALLENGE:
+${formData.biggest_challenge || 'Not provided'}
+
+🎯 TARGET CUSTOMERS:
+${formData.target_customers || 'Not provided'}
+
+🔧 TECHNICAL REQUIREMENTS:
+${formData.technical_requirements.length > 0 ? formData.technical_requirements.map(t => `• ${t.replace(/_/g, ' ')}`).join('\n') : '• None specified'}
+
+📈 SUCCESS METRICS:
+${formData.success_metrics.length > 0 ? formData.success_metrics.map(m => `• ${m.replace(/_/g, ' ')}`).join('\n') : '• None specified'}
+
+🏆 LEAD QUALITY:
+- Decision Maker: ${formData.decision_maker || 'Not specified'}
+- Ready to Start: ${formData.ready_to_start || 'Not specified'}
+- Decision Timeline: ${formData.decision_timeline || 'Not specified'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This lead submitted: ${new Date().toLocaleDateString('en-GB', { 
+  weekday: 'long', 
+  year: 'numeric', 
+  month: 'long', 
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit'
+})}
+
+ACTION REQUIRED: Review and respond within 24 hours! 🚀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `;
+      
+      formDataToSend.append('message', emailMessage);
+
+      const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submissionData),
+        body: formDataToSend
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (result.success) {
         setSubmitStatus('success');
         // Reset form after successful submission
         setTimeout(() => {
@@ -241,6 +296,7 @@ export default function EnhancedIVCreativeForm() {
                 {sections.map((section, index) => (
                   <button
                     key={section.id}
+                    type="button"
                     onClick={() => scrollToSection(index)}
                     className={`flex flex-col items-center p-3 rounded-xl transition-all duration-300 min-w-0 ${
                       currentSection === index 
@@ -495,58 +551,58 @@ export default function EnhancedIVCreativeForm() {
                 <label className="block text-sm font-semibold text-white">Main Products/Services *</label>
                 <textarea
                   name="main_products_services"
-                  value={formData.main_products_services}
-                  onChange={(e) => handleInputChange('main_products_services', e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
-                  placeholder="Describe what you sell or the services you provide..."
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white">Target Customers *</label>
-                <textarea
-                  name="target_customers"
-                  value={formData.target_customers}
-                  onChange={(e) => handleInputChange('target_customers', e.target.value)}
-                  rows={3}
-                  className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
-                  placeholder="Who are your ideal customers? Demographics, behaviors, pain points..."
-                  required
-                />
-              </div>
+                 value={formData.main_products_services}
+                 onChange={(e) => handleInputChange('main_products_services', e.target.value)}
+                 rows={3}
+                 className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
+                 placeholder="Describe what you sell or the services you provide..."
+                 required
+               />
+             </div>
+             
+             <div className="space-y-2">
+               <label className="block text-sm font-semibold text-white">Target Customers *</label>
+               <textarea
+                 name="target_customers"
+                 value={formData.target_customers}
+                 onChange={(e) => handleInputChange('target_customers', e.target.value)}
+                 rows={3}
+                 className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
+                 placeholder="Who are your ideal customers? Demographics, behaviors, pain points..."
+                 required
+               />
+             </div>
 
-              <div className="grid lg:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white">What makes you unique?</label>
-                  <textarea
-                    name="unique_selling_point"
-                    value={formData.unique_selling_point}
-                    onChange={(e) => handleInputChange('unique_selling_point', e.target.value)}
-                    rows={3}
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
-                    placeholder="What sets you apart from competitors? Your unique value proposition..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white">Biggest Business Challenge *</label>
-                  <textarea
-                    name="biggest_challenge"
-                    value={formData.biggest_challenge}
-                    onChange={(e) => handleInputChange('biggest_challenge', e.target.value)}
-                    rows={3}
-                    className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
-                    placeholder="What's your biggest challenge right now? Low traffic, poor conversions, competition..."
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+             <div className="grid lg:grid-cols-2 gap-6">
+               <div className="space-y-2">
+                 <label className="block text-sm font-semibold text-white">What makes you unique?</label>
+                 <textarea
+                   name="unique_selling_point"
+                   value={formData.unique_selling_point}
+                   onChange={(e) => handleInputChange('unique_selling_point', e.target.value)}
+                   rows={3}
+                   className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
+                   placeholder="What sets you apart from competitors? Your unique value proposition..."
+                 />
+               </div>
+               <div className="space-y-2">
+                 <label className="block text-sm font-semibold text-white">Biggest Business Challenge *</label>
+                 <textarea
+                   name="biggest_challenge"
+                   value={formData.biggest_challenge}
+                   onChange={(e) => handleInputChange('biggest_challenge', e.target.value)}
+                   rows={3}
+                   className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
+                   placeholder="What's your biggest challenge right now? Low traffic, poor conversions, competition..."
+                   required
+                 />
+               </div>
+             </div>
+           </div>
+         </div>
 
-          {/* Marketing & Competition */}
-          <div id="section-3" className="p-8 border-b border-gray-800">
+         {/* Marketing & Competition */}
+         <div id="section-3" className="p-8 border-b border-gray-800">
            <div className="flex items-center gap-4 mb-8">
              <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg shadow-pink-500/25">
                <BarChart3 size={28} className="text-white" />
@@ -993,7 +1049,7 @@ export default function EnhancedIVCreativeForm() {
                  value={formData.previous_agencies}
                  onChange={(e) => handleInputChange('previous_agencies', e.target.value)}
                  rows={3}
-                 className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
+className="w-full px-4 py-4 bg-gray-800 border border-gray-700 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 transition-all duration-200 text-lg resize-none text-white placeholder-gray-400"
                  placeholder="Tell us about your experience with previous agencies or freelancers..."
                />
              </div>
@@ -1041,7 +1097,7 @@ export default function EnhancedIVCreativeForm() {
            <div className="flex items-center gap-4 mb-8">
              <div className="w-14 h-14 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg shadow-pink-500/25">
                <ThumbsUp size={28} className="text-white" />
-               </div>
+             </div>
              <div>
                <h2 className="text-3xl font-bold text-white">Next Steps</h2>
                <p className="text-gray-400 mt-1">A few final questions to help us serve you better</p>
@@ -1174,9 +1230,9 @@ export default function EnhancedIVCreativeForm() {
              <div className="mt-8 text-center">
                <p className="text-pink-100 mb-2">Questions? We're here to help!</p>
                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-lg font-semibold">
-                 <a href="mailto:info@iv-creative.co.uk" className="flex items-center gap-2 hover:text-pink-200 transition-colors">
+                 <a href="mailto:pedro@iv-creative.co.uk" className="flex items-center gap-2 hover:text-pink-200 transition-colors">
                    <Mail size={20} />
-                   info@iv-creative.co.uk
+                   pedro@iv-creative.co.uk
                  </a>
                  <a href="tel:+442012345678" className="flex items-center gap-2 hover:text-pink-200 transition-colors">
                    <Phone size={20} />
